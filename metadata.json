@@ -1,0 +1,8 @@
+{
+  "name": "Valiant Report",
+  "description": "App para report de eventos com validação de itens via IA.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
