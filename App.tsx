@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Event, Item, Photo, EventStatus, ItemStatus } from './types';
 import { sendToDatabase } from './services/api'; 
+import { ICONS } from './icons';
 // AI Service import removed for now as requested
 // import { analyzeImage } from './services/geminiService';
 
@@ -8,179 +9,179 @@ import { sendToDatabase } from './services/api';
 const MOCK_EVENT_IMG = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069&auto=format&fit=crop";
 const CAIXA_EVENT_IMG = "https://i.imgur.com/Kz8qf6x.png"; 
 
-// --- Helper: Category Icons (Simplified Names) ---
+// --- Helper: Category Icons (Using Library) ---
 const getCategoryIcon = (categoryName: string): string => {
     const map: Record<string, string> = {
-        'Cenografia': 'theater_comedy',
-        'Mobiliário': 'chair',
-        'Iluminação e Sonorização': 'speaker_group',
-        'Ornamentação': 'potted_plant',
-        'Equipamentos': 'router',
-        'Comunicação Visual': 'signpost',
-        'Comunicação Audiovisual': 'video_camera_back',
-        'Comunicação Digital': 'devices',
-        'Comunicação Gráfica': 'print',
-        'Material Promocional': 'redeem', // Renamed from Promocional
-        'Comunicação Têxtil': 'apparel',
-        'Foto e Filmagem': 'photo_camera',
-        'Recursos Humanos': 'groups',
-        'Serviços Artísticos': 'artist',
-        'Serviços Essenciais': 'lightbulb',
-        'Serviços Técnicos': 'construction',
-        'Transporte e Logística': 'local_shipping',
-        'Taxas e Alvarás': 'description',
-        'A&B': 'restaurant',
-        'Outros': 'more_horiz'
+        'Cenografia': ICONS.CATEGORIES.CENOGRAFIA,
+        'Mobiliário': ICONS.CATEGORIES.MOBILIARIO,
+        'Iluminação e Sonorização': ICONS.CATEGORIES.ILUMINACAO_SOM,
+        'Ornamentação': ICONS.CATEGORIES.ORNAMENTACAO,
+        'Equipamentos': ICONS.CATEGORIES.EQUIPAMENTOS,
+        'Comunicação Visual': ICONS.CATEGORIES.COM_VISUAL,
+        'Comunicação Audiovisual': ICONS.CATEGORIES.COM_AUDIOVISUAL,
+        'Comunicação Digital': ICONS.CATEGORIES.COM_DIGITAL,
+        'Comunicação Gráfica': ICONS.CATEGORIES.COM_GRAFICA,
+        'Material Promocional': ICONS.CATEGORIES.PROMOCIONAL,
+        'Comunicação Têxtil': ICONS.CATEGORIES.COM_TEXTIL,
+        'Foto e Filmagem': ICONS.CATEGORIES.FOTO_FILMAGEM,
+        'Recursos Humanos': ICONS.CATEGORIES.RH,
+        'Serviços Artísticos': ICONS.CATEGORIES.ARTISTICOS,
+        'Serviços Essenciais': ICONS.CATEGORIES.ESSENCIAIS,
+        'Serviços Técnicos': ICONS.CATEGORIES.TECNICOS,
+        'Transporte e Logística': ICONS.CATEGORIES.LOGISTICA,
+        'Taxas e Alvarás': ICONS.CATEGORIES.TAXAS,
+        'A&B': ICONS.CATEGORIES.ALIMENTACAO,
+        'Outros': ICONS.CATEGORIES.OUTROS
     };
-    return map[categoryName] || 'category';
+    return map[categoryName] || ICONS.UI.CATEGORY_DEFAULT;
 };
 
 // --- Data: CAIXA Event Items (Full PDF Import) ---
 const FULL_IMPORTED_ITEMS: Item[] = [
     // Cenografia (Page 1)
-    { id: 'cen-01', category: 'Cenografia', name: 'Credenciamento imprensa/chapelaria', description: 'Painel de fundo em madeira com lona, balcões de atendimento, cadeiras, piso adesivado, elétrica e iluminação funcional', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'badge', photos: [], checklist: [] },
-    { id: 'cen-02', category: 'Cenografia', name: 'Cenografia foyer', description: 'Painéis estruturados, pórticos com molduras arredondadas, neon flex, adesivos de piso e logos CAIXA volumétricos', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'wallpaper', photos: [], checklist: [] },
-    { id: 'cen-03', category: 'Cenografia', name: 'Cenografia lojinha', description: 'Balcão orgânico em marcenaria, prateleiras expositivas, arara e piso adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'storefront', photos: [], checklist: [] },
-    { id: 'cen-04', category: 'Cenografia', name: 'Palco imprensa', description: 'Painel de fundo, praticável em madeira com carpete e púlpito adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'podium', photos: [], checklist: [] },
-    { id: 'cen-05', category: 'Cenografia', name: 'Espaço coffee break', description: 'Painel cenográfico com lona, neon flex e piso adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'coffee', photos: [], checklist: [] },
-    { id: 'cen-06', category: 'Cenografia', name: 'Totens de sinalização cenográfica', description: '9 unidades dupla face com programação visual', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'signpost', photos: [], checklist: [] },
-    { id: 'cen-07', category: 'Cenografia', name: 'Photo Opp foyer', description: '2 bancos circulares, painel de fundo e estruturas acrílicas cenográficas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'camera_front', photos: [], checklist: [] },
-    { id: 'cen-08', category: 'Cenografia', name: 'Bancos cenográficos', description: 'Em marcenaria adesivada', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'chair', photos: [], checklist: [] },
-    { id: 'cen-09', category: 'Cenografia', name: 'Túnel LED', description: 'Piso adesivado, paredes reflexivas e teto estruturado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'light_mode', photos: [], checklist: [] },
-    { id: 'cen-10', category: 'Cenografia', name: 'Túnel com fitas LED', description: 'Material reflexivo, paredes e teto com neon flex', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'light_mode', photos: [], checklist: [] },
-    { id: 'cen-11', category: 'Cenografia', name: 'Pórticos internos dos túneis', description: 'Estruturas em madeira com acabamento em napa azul', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'door_front', photos: [], checklist: [] },
-    { id: 'cen-12', category: 'Cenografia', name: 'Plenária', description: 'Palco curvo com carpete azul, fitas de LED, rampa e fundo de palco', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'theater_comedy', photos: [], checklist: [] },
-    { id: 'cen-13', category: 'Cenografia', name: 'Sala podcast', description: 'Estrutura com isolamento acústico, vidro, mobiliário, elétrica, iluminação e piso adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'mic', photos: [], checklist: [] },
-    { id: 'cen-14', category: 'Cenografia', name: 'Praticáveis de imprensa', description: 'Com guarda-corpo e escadas laterais', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'stairs', photos: [], checklist: [] },
-    { id: 'cen-15', category: 'Cenografia', name: 'Puffs cenográficos', description: 'Em marcenaria, revestidos em napa preta com LED', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'chair', photos: [], checklist: [] },
-    { id: 'cen-16', category: 'Cenografia', name: 'Área de descompressão 1', description: 'Pórticos temáticos, elementos aéreos e letras caixa iluminadas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'spa', photos: [], checklist: [] },
-    { id: 'cen-17', category: 'Cenografia', name: 'Adesivo de piso cenográfico 1', description: 'Área de descompressão 1', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'layers', photos: [], checklist: [] },
-    { id: 'cen-18', category: 'Cenografia', name: 'Área de descompressão 2', description: 'Estruturas orgânicas e elementos aéreos iluminados', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'spa', photos: [], checklist: [] },
-    { id: 'cen-19', category: 'Cenografia', name: 'Adesivo de piso cenográfico 2', description: 'Área de descompressão 2', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'layers', photos: [], checklist: [] },
-    { id: 'cen-20', category: 'Cenografia', name: 'Coquetel bar cartões', description: 'Estrutura cenográfica completa com balcão e fechamentos', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'local_bar', photos: [], checklist: [] },
-    { id: 'cen-21', category: 'Cenografia', name: 'Coquetel bar seguridade', description: 'Estrutura cenográfica completa com balcão e fechamentos', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'local_bar', photos: [], checklist: [] },
-    { id: 'cen-22', category: 'Cenografia', name: 'Cenografia Plinko', description: 'Painel estruturado em madeira com neon flex e suporte para LED', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'casino', photos: [], checklist: [] },
+    { id: 'cen-01', category: 'Cenografia', name: 'Credenciamento imprensa/chapelaria', description: 'Painel de fundo em madeira com lona, balcões de atendimento, cadeiras, piso adesivado, elétrica e iluminação funcional', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.BADGE, photos: [], checklist: [] },
+    { id: 'cen-02', category: 'Cenografia', name: 'Cenografia foyer', description: 'Painéis estruturados, pórticos com molduras arredondadas, neon flex, adesivos de piso e logos CAIXA volumétricos', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.WALLPAPER, photos: [], checklist: [] },
+    { id: 'cen-03', category: 'Cenografia', name: 'Cenografia lojinha', description: 'Balcão orgânico em marcenaria, prateleiras expositivas, arara e piso adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.STOREFRONT, photos: [], checklist: [] },
+    { id: 'cen-04', category: 'Cenografia', name: 'Palco imprensa', description: 'Painel de fundo, praticável em madeira com carpete e púlpito adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.PODIUM, photos: [], checklist: [] },
+    { id: 'cen-05', category: 'Cenografia', name: 'Espaço coffee break', description: 'Painel cenográfico com lona, neon flex e piso adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.COFFEE, photos: [], checklist: [] },
+    { id: 'cen-06', category: 'Cenografia', name: 'Totens de sinalização cenográfica', description: '9 unidades dupla face com programação visual', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.COM_VISUAL, photos: [], checklist: [] },
+    { id: 'cen-07', category: 'Cenografia', name: 'Photo Opp foyer', description: '2 bancos circulares, painel de fundo e estruturas acrílicas cenográficas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CAMERA_FRONT, photos: [], checklist: [] },
+    { id: 'cen-08', category: 'Cenografia', name: 'Bancos cenográficos', description: 'Em marcenaria adesivada', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.MOBILIARIO, photos: [], checklist: [] },
+    { id: 'cen-09', category: 'Cenografia', name: 'Túnel LED', description: 'Piso adesivado, paredes reflexivas e teto estruturado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LIGHT_MODE, photos: [], checklist: [] },
+    { id: 'cen-10', category: 'Cenografia', name: 'Túnel com fitas LED', description: 'Material reflexivo, paredes e teto com neon flex', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LIGHT_MODE, photos: [], checklist: [] },
+    { id: 'cen-11', category: 'Cenografia', name: 'Pórticos internos dos túneis', description: 'Estruturas em madeira com acabamento em napa azul', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.DOOR_FRONT, photos: [], checklist: [] },
+    { id: 'cen-12', category: 'Cenografia', name: 'Plenária', description: 'Palco curvo com carpete azul, fitas de LED, rampa e fundo de palco', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.CENOGRAFIA, photos: [], checklist: [] },
+    { id: 'cen-13', category: 'Cenografia', name: 'Sala podcast', description: 'Estrutura com isolamento acústico, vidro, mobiliário, elétrica, iluminação e piso adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.MIC, photos: [], checklist: [] },
+    { id: 'cen-14', category: 'Cenografia', name: 'Praticáveis de imprensa', description: 'Com guarda-corpo e escadas laterais', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.STAIRS, photos: [], checklist: [] },
+    { id: 'cen-15', category: 'Cenografia', name: 'Puffs cenográficos', description: 'Em marcenaria, revestidos em napa preta com LED', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.MOBILIARIO, photos: [], checklist: [] },
+    { id: 'cen-16', category: 'Cenografia', name: 'Área de descompressão 1', description: 'Pórticos temáticos, elementos aéreos e letras caixa iluminadas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SPA, photos: [], checklist: [] },
+    { id: 'cen-17', category: 'Cenografia', name: 'Adesivo de piso cenográfico 1', description: 'Área de descompressão 1', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LAYERS, photos: [], checklist: [] },
+    { id: 'cen-18', category: 'Cenografia', name: 'Área de descompressão 2', description: 'Estruturas orgânicas e elementos aéreos iluminados', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SPA, photos: [], checklist: [] },
+    { id: 'cen-19', category: 'Cenografia', name: 'Adesivo de piso cenográfico 2', description: 'Área de descompressão 2', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LAYERS, photos: [], checklist: [] },
+    { id: 'cen-20', category: 'Cenografia', name: 'Coquetel bar cartões', description: 'Estrutura cenográfica completa com balcão e fechamentos', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.BAR, photos: [], checklist: [] },
+    { id: 'cen-21', category: 'Cenografia', name: 'Coquetel bar seguridade', description: 'Estrutura cenográfica completa com balcão e fechamentos', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.BAR, photos: [], checklist: [] },
+    { id: 'cen-22', category: 'Cenografia', name: 'Cenografia Plinko', description: 'Painel estruturado em madeira com neon flex e suporte para LED', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CASINO, photos: [], checklist: [] },
     // Cenografia (Page 2)
-    { id: 'cen-23', category: 'Cenografia', name: 'Complemento de balcão', description: 'Ampliação de neon flex', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'add', photos: [], checklist: [] },
-    { id: 'cen-24', category: 'Cenografia', name: 'Cafeteria asset', description: 'Balcões, painel curvo, sanca com LED e instalações elétricas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'coffee_maker', photos: [], checklist: [] },
-    { id: 'cen-25', category: 'Cenografia', name: 'Ativação NBB CAIXA', description: 'Cabines de basquete com placares e piso adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'sports_basketball', photos: [], checklist: [] },
-    { id: 'cen-26', category: 'Cenografia', name: 'Balcão compensação de carbono', description: 'Estrutura em MDF com elétrica e tomadas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'counter_tops', photos: [], checklist: [] },
-    { id: 'cen-27', category: 'Cenografia', name: 'Totem de sinalização', description: 'Compensação de carbono', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'signpost', photos: [], checklist: [] },
+    { id: 'cen-23', category: 'Cenografia', name: 'Complemento de balcão', description: 'Ampliação de neon flex', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.ADD, photos: [], checklist: [] },
+    { id: 'cen-24', category: 'Cenografia', name: 'Cafeteria asset', description: 'Balcões, painel curvo, sanca com LED e instalações elétricas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.COFFEE_MAKER, photos: [], checklist: [] },
+    { id: 'cen-25', category: 'Cenografia', name: 'Ativação NBB CAIXA', description: 'Cabines de basquete com placares e piso adesivado', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.BASKETBALL, photos: [], checklist: [] },
+    { id: 'cen-26', category: 'Cenografia', name: 'Balcão compensação de carbono', description: 'Estrutura em MDF com elétrica e tomadas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.COUNTER_TOPS, photos: [], checklist: [] },
+    { id: 'cen-27', category: 'Cenografia', name: 'Totem de sinalização', description: 'Compensação de carbono', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.COM_VISUAL, photos: [], checklist: [] },
 
     // Mobiliário (Page 2)
-    { id: 'mob-01', category: 'Mobiliário', name: 'Mobiliário foyer e imprensa', description: 'Unifilas, cadeiras, poltronas, pufes, sofás e plantas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'chair', photos: [], checklist: [] },
-    { id: 'mob-02', category: 'Mobiliário', name: 'Mobiliário arena', description: 'Poltronas e mesas de apoio', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'event_seat', photos: [], checklist: [] },
-    { id: 'mob-03', category: 'Mobiliário', name: 'Camarim VIP', description: 'Penteadeira, cadeiras, lounge e tapete', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'star', photos: [], checklist: [] },
-    { id: 'mob-04', category: 'Mobiliário', name: 'Arranjos decorativos', description: 'Para restaurante', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'local_florist', photos: [], checklist: [] },
-    { id: 'mob-05', category: 'Mobiliário', name: 'Banquetas altas', description: 'Para áreas de apoio', requiredQuantity: 6, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'chair_alt', photos: [], checklist: [] },
-    { id: 'mob-06', category: 'Mobiliário', name: 'Locação de manequins', description: 'Masculino e feminino', requiredQuantity: 2, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'accessibility', photos: [], checklist: [] },
+    { id: 'mob-01', category: 'Mobiliário', name: 'Mobiliário foyer e imprensa', description: 'Unifilas, cadeiras, poltronas, pufes, sofás e plantas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.MOBILIARIO, photos: [], checklist: [] },
+    { id: 'mob-02', category: 'Mobiliário', name: 'Mobiliário arena', description: 'Poltronas e mesas de apoio', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.EVENT_SEAT, photos: [], checklist: [] },
+    { id: 'mob-03', category: 'Mobiliário', name: 'Camarim VIP', description: 'Penteadeira, cadeiras, lounge e tapete', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.STAR, photos: [], checklist: [] },
+    { id: 'mob-04', category: 'Mobiliário', name: 'Arranjos decorativos', description: 'Para restaurante', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.FLORIST, photos: [], checklist: [] },
+    { id: 'mob-05', category: 'Mobiliário', name: 'Banquetas altas', description: 'Para áreas de apoio', requiredQuantity: 6, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHAIR_ALT, photos: [], checklist: [] },
+    { id: 'mob-06', category: 'Mobiliário', name: 'Locação de manequins', description: 'Masculino e feminino', requiredQuantity: 2, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.ACCESSIBILITY, photos: [], checklist: [] },
 
     // Equipamentos (Page 2)
-    { id: 'eq-01', category: 'Equipamentos', name: 'Painéis de LED', description: 'Foyer e túneis com processamento e servidores dedicados', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'led_display', photos: [], checklist: [] },
-    { id: 'eq-02', category: 'Equipamentos', name: 'Iluminação cênica e sonorização', description: 'Ambiente foyer', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'spotlight', photos: [], checklist: [] },
-    { id: 'eq-03', category: 'Equipamentos', name: 'Sistema de LED espiral', description: 'Arena', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'blur_on', photos: [], checklist: [] },
-    { id: 'eq-04', category: 'Equipamentos', name: 'Processamento de LED arena', description: 'Com servidores master e slave', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'memory', photos: [], checklist: [] },
-    { id: 'eq-05', category: 'Equipamentos', name: 'Projeção mapeada', description: 'Em fundo de palco com projetores e processamento', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'videocam', photos: [], checklist: [] },
-    { id: 'eq-06', category: 'Equipamentos', name: 'Teleprompter de palco', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'subtitles', photos: [], checklist: [] },
-    { id: 'eq-07', category: 'Equipamentos', name: 'Captação de streaming', description: 'Com câmeras, ATEM, intercom e transmissão PT/EN', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'live_tv', photos: [], checklist: [] },
-    { id: 'eq-08', category: 'Equipamentos', name: 'Sistema de tradução simultânea', description: 'Com cabines e receptores', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'translate', photos: [], checklist: [] },
-    { id: 'eq-09', category: 'Equipamentos', name: 'Box truss aéreo', description: 'Com talhas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'grid_on', photos: [], checklist: [] },
-    { id: 'eq-10', category: 'Equipamentos', name: 'Iluminação cênica arena', description: 'Com consoles MA', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'light', photos: [], checklist: [] },
-    { id: 'eq-11', category: 'Equipamentos', name: 'Plataformas elevatórias', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'elevator', photos: [], checklist: [] },
-    { id: 'eq-12', category: 'Equipamentos', name: 'Sistema de áudio arena completo', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'speaker', photos: [], checklist: [] },
+    { id: 'eq-01', category: 'Equipamentos', name: 'Painéis de LED', description: 'Foyer e túneis com processamento e servidores dedicados', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LED_DISPLAY, photos: [], checklist: [] },
+    { id: 'eq-02', category: 'Equipamentos', name: 'Iluminação cênica e sonorização', description: 'Ambiente foyer', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SPOTLIGHT, photos: [], checklist: [] },
+    { id: 'eq-03', category: 'Equipamentos', name: 'Sistema de LED espiral', description: 'Arena', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.BLUR_ON, photos: [], checklist: [] },
+    { id: 'eq-04', category: 'Equipamentos', name: 'Processamento de LED arena', description: 'Com servidores master e slave', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.MEMORY, photos: [], checklist: [] },
+    { id: 'eq-05', category: 'Equipamentos', name: 'Projeção mapeada', description: 'Em fundo de palco com projetores e processamento', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.VIDEOCAM, photos: [], checklist: [] },
+    { id: 'eq-06', category: 'Equipamentos', name: 'Teleprompter de palco', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SUBTITLES, photos: [], checklist: [] },
+    { id: 'eq-07', category: 'Equipamentos', name: 'Captação de streaming', description: 'Com câmeras, ATEM, intercom e transmissão PT/EN', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LIVE_TV, photos: [], checklist: [] },
+    { id: 'eq-08', category: 'Equipamentos', name: 'Sistema de tradução simultânea', description: 'Com cabines e receptores', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.TRANSLATE, photos: [], checklist: [] },
+    { id: 'eq-09', category: 'Equipamentos', name: 'Box truss aéreo', description: 'Com talhas', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.GRID_ON, photos: [], checklist: [] },
+    { id: 'eq-10', category: 'Equipamentos', name: 'Iluminação cênica arena', description: 'Com consoles MA', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LIGHT, photos: [], checklist: [] },
+    { id: 'eq-11', category: 'Equipamentos', name: 'Plataformas elevatórias', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.ELEVATOR, photos: [], checklist: [] },
+    { id: 'eq-12', category: 'Equipamentos', name: 'Sistema de áudio arena completo', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SPEAKER, photos: [], checklist: [] },
     // Equipamentos (Page 3)
-    { id: 'eq-13', category: 'Equipamentos', name: 'In ear', description: 'Para mestre de cerimônia', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'hearing', photos: [], checklist: [] },
-    { id: 'eq-14', category: 'Equipamentos', name: 'Rádio comunicador', description: '', requiredQuantity: 50, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: 'radio', photos: [], checklist: [] },
-    { id: 'eq-15', category: 'Equipamentos', name: 'Totens de credenciamento', description: 'Autoatendimento', requiredQuantity: 12, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'touch_app', photos: [], checklist: [] },
-    { id: 'eq-16', category: 'Equipamentos', name: 'Celulares controle de kits - Matriz', description: '', requiredQuantity: 6, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'smartphone', photos: [], checklist: [] },
-    { id: 'eq-17', category: 'Equipamentos', name: 'Celulares controle de kits - CICB', description: '', requiredQuantity: 5, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'smartphone', photos: [], checklist: [] },
-    { id: 'eq-18', category: 'Equipamentos', name: 'Kit equipamentos credenciamento imprensa', description: '', requiredQuantity: 1, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'newspaper', photos: [], checklist: [] },
-    { id: 'eq-19', category: 'Equipamentos', name: 'Leitores QR code de mesa', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'qr_code', photos: [], checklist: [] },
-    { id: 'eq-20', category: 'Equipamentos', name: 'Plinko gigante', description: 'Painel LED touch com notebook', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'touch_app', photos: [], checklist: [] },
-    { id: 'eq-21', category: 'Equipamentos', name: 'Totens de sinalização adicionais', description: '', requiredQuantity: 2, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'signpost', photos: [], checklist: [] },
-    { id: 'eq-22', category: 'Equipamentos', name: 'Equipamento extra ACAP', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'add_box', photos: [], checklist: [] },
+    { id: 'eq-13', category: 'Equipamentos', name: 'In ear', description: 'Para mestre de cerimônia', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.HEARING, photos: [], checklist: [] },
+    { id: 'eq-14', category: 'Equipamentos', name: 'Rádio comunicador', description: '', requiredQuantity: 50, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.RADIO, photos: [], checklist: [] },
+    { id: 'eq-15', category: 'Equipamentos', name: 'Totens de credenciamento', description: 'Autoatendimento', requiredQuantity: 12, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.TOUCH_APP, photos: [], checklist: [] },
+    { id: 'eq-16', category: 'Equipamentos', name: 'Celulares controle de kits - Matriz', description: '', requiredQuantity: 6, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SMARTPHONE, photos: [], checklist: [] },
+    { id: 'eq-17', category: 'Equipamentos', name: 'Celulares controle de kits - CICB', description: '', requiredQuantity: 5, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SMARTPHONE, photos: [], checklist: [] },
+    { id: 'eq-18', category: 'Equipamentos', name: 'Kit equipamentos credenciamento imprensa', description: '', requiredQuantity: 1, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.NEWSPAPER, photos: [], checklist: [] },
+    { id: 'eq-19', category: 'Equipamentos', name: 'Leitores QR code de mesa', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.QR_CODE, photos: [], checklist: [] },
+    { id: 'eq-20', category: 'Equipamentos', name: 'Plinko gigante', description: 'Painel LED touch com notebook', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.TOUCH_APP, photos: [], checklist: [] },
+    { id: 'eq-21', category: 'Equipamentos', name: 'Totens de sinalização adicionais', description: '', requiredQuantity: 2, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.COM_VISUAL, photos: [], checklist: [] },
+    { id: 'eq-22', category: 'Equipamentos', name: 'Equipamento extra ACAP', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.ADD_BOX, photos: [], checklist: [] },
 
     // Material Promocional (Brindes) (Page 3-4) - Renamed from Promocional
-    { id: 'prom-01', category: 'Material Promocional', name: 'Ecobag em brim personalizada', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'shopping_bag', photos: [], checklist: [] },
-    { id: 'prom-02', category: 'Material Promocional', name: 'Tag ecobag', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'label', photos: [], checklist: [] },
-    { id: 'prom-03', category: 'Material Promocional', name: 'Camiseta personalizada DTF (lote 1)', description: '', requiredQuantity: 2200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'checkroom', photos: [], checklist: [] },
-    { id: 'prom-04', category: 'Material Promocional', name: 'Camiseta personalizada DTF (lote 2)', description: '', requiredQuantity: 2200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'checkroom', photos: [], checklist: [] },
-    { id: 'prom-05', category: 'Material Promocional', name: 'Crachá PVC com cordão', description: '', requiredQuantity: 1600, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'badge', photos: [], checklist: [] },
-    { id: 'prom-06', category: 'Material Promocional', name: 'Garrafa inox personalizada', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'water_bottle', photos: [], checklist: [] },
-    { id: 'prom-07', category: 'Material Promocional', name: 'Pulseira de identificação', description: 'Em tecido', requiredQuantity: 200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'watch', photos: [], checklist: [] },
-    { id: 'prom-08', category: 'Material Promocional', name: 'Caneca esmaltada personalizada', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'coffee', photos: [], checklist: [] },
-    { id: 'prom-09', category: 'Material Promocional', name: 'Embalagem de pano para caneca', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'inventory_2', photos: [], checklist: [] },
-    { id: 'prom-10', category: 'Material Promocional', name: 'Tag caneca', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'label', photos: [], checklist: [] },
-    { id: 'prom-11', category: 'Material Promocional', name: 'Pin metálico personalizado', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'verified', photos: [], checklist: [] },
-    { id: 'prom-12', category: 'Material Promocional', name: 'Bolsa academia couro premium', description: '', requiredQuantity: 300, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'shopping_bag', photos: [], checklist: [] },
-    { id: 'prom-13', category: 'Material Promocional', name: 'Kindler 11g', description: '', requiredQuantity: 130, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'menu_book', photos: [], checklist: [] },
-    { id: 'prom-14', category: 'Material Promocional', name: 'Fone JBL Tune 520bt', description: '', requiredQuantity: 200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'headphones', photos: [], checklist: [] },
-    { id: 'prom-15', category: 'Material Promocional', name: 'Mala Volaris', description: '', requiredQuantity: 100, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'luggage', photos: [], checklist: [] },
-    { id: 'prom-16', category: 'Material Promocional', name: 'Echo Dot 5ª geração', description: '', requiredQuantity: 100, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'speaker', photos: [], checklist: [] },
-    { id: 'prom-17', category: 'Material Promocional', name: 'Mala de bordo ABS', description: '', requiredQuantity: 300, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'luggage', photos: [], checklist: [] },
-    { id: 'prom-18', category: 'Material Promocional', name: 'Mochila couro sintético', description: '', requiredQuantity: 300, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'backpack', photos: [], checklist: [] },
-    { id: 'prom-19', category: 'Material Promocional', name: 'Echo Pop', description: '', requiredQuantity: 200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'speaker', photos: [], checklist: [] },
-    { id: 'prom-20', category: 'Material Promocional', name: 'Caneca térmica podcast', description: '', requiredQuantity: 50, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'coffee', photos: [], checklist: [] },
+    { id: 'prom-01', category: 'Material Promocional', name: 'Ecobag em brim personalizada', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SHOPPING_BAG, photos: [], checklist: [] },
+    { id: 'prom-02', category: 'Material Promocional', name: 'Tag ecobag', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LABEL, photos: [], checklist: [] },
+    { id: 'prom-03', category: 'Material Promocional', name: 'Camiseta personalizada DTF (lote 1)', description: '', requiredQuantity: 2200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHECKROOM, photos: [], checklist: [] },
+    { id: 'prom-04', category: 'Material Promocional', name: 'Camiseta personalizada DTF (lote 2)', description: '', requiredQuantity: 2200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHECKROOM, photos: [], checklist: [] },
+    { id: 'prom-05', category: 'Material Promocional', name: 'Crachá PVC com cordão', description: '', requiredQuantity: 1600, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.BADGE, photos: [], checklist: [] },
+    { id: 'prom-06', category: 'Material Promocional', name: 'Garrafa inox personalizada', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.WATER_BOTTLE, photos: [], checklist: [] },
+    { id: 'prom-07', category: 'Material Promocional', name: 'Pulseira de identificação', description: 'Em tecido', requiredQuantity: 200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.WATCH, photos: [], checklist: [] },
+    { id: 'prom-08', category: 'Material Promocional', name: 'Caneca esmaltada personalizada', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.COFFEE, photos: [], checklist: [] },
+    { id: 'prom-09', category: 'Material Promocional', name: 'Embalagem de pano para caneca', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.INVENTORY_2, photos: [], checklist: [] },
+    { id: 'prom-10', category: 'Material Promocional', name: 'Tag caneca', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LABEL, photos: [], checklist: [] },
+    { id: 'prom-11', category: 'Material Promocional', name: 'Pin metálico personalizado', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.VERIFIED, photos: [], checklist: [] },
+    { id: 'prom-12', category: 'Material Promocional', name: 'Bolsa academia couro premium', description: '', requiredQuantity: 300, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SHOPPING_BAG, photos: [], checklist: [] },
+    { id: 'prom-13', category: 'Material Promocional', name: 'Kindler 11g', description: '', requiredQuantity: 130, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.MENU_BOOK, photos: [], checklist: [] },
+    { id: 'prom-14', category: 'Material Promocional', name: 'Fone JBL Tune 520bt', description: '', requiredQuantity: 200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.HEADPHONES, photos: [], checklist: [] },
+    { id: 'prom-15', category: 'Material Promocional', name: 'Mala Volaris', description: '', requiredQuantity: 100, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LUGGAGE, photos: [], checklist: [] },
+    { id: 'prom-16', category: 'Material Promocional', name: 'Echo Dot 5ª geração', description: '', requiredQuantity: 100, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SPEAKER, photos: [], checklist: [] },
+    { id: 'prom-17', category: 'Material Promocional', name: 'Mala de bordo ABS', description: '', requiredQuantity: 300, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.LUGGAGE, photos: [], checklist: [] },
+    { id: 'prom-18', category: 'Material Promocional', name: 'Mochila couro sintético', description: '', requiredQuantity: 300, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.BACKPACK, photos: [], checklist: [] },
+    { id: 'prom-19', category: 'Material Promocional', name: 'Echo Pop', description: '', requiredQuantity: 200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SPEAKER, photos: [], checklist: [] },
+    { id: 'prom-20', category: 'Material Promocional', name: 'Caneca térmica podcast', description: '', requiredQuantity: 50, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.COFFEE, photos: [], checklist: [] },
 
     // Comunicação Gráfica (Page 4)
-    { id: 'graf-01', category: 'Comunicação Gráfica', name: 'Ficha de palco impressa', description: '', requiredQuantity: 200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'description', photos: [], checklist: [] },
-    { id: 'graf-02', category: 'Comunicação Gráfica', name: 'Prisma gráfico para lojinha', description: '', requiredQuantity: 60, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'change_history', photos: [], checklist: [] },
+    { id: 'graf-01', category: 'Comunicação Gráfica', name: 'Ficha de palco impressa', description: '', requiredQuantity: 200, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.TAXAS, photos: [], checklist: [] },
+    { id: 'graf-02', category: 'Comunicação Gráfica', name: 'Prisma gráfico para lojinha', description: '', requiredQuantity: 60, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHANGE_HISTORY, photos: [], checklist: [] },
 
     // Comunicação Têxtil (Page 4)
-    { id: 'text-01', category: 'Comunicação Têxtil', name: 'Agasalho em moletom', description: '', requiredQuantity: 50, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'checkroom', photos: [], checklist: [] },
-    { id: 'text-02', category: 'Comunicação Têxtil', name: 'Calça em moletom', description: '', requiredQuantity: 50, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'checkroom', photos: [], checklist: [] },
-    { id: 'text-03', category: 'Comunicação Têxtil', name: 'Camisa polo', description: '', requiredQuantity: 50, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'checkroom', photos: [], checklist: [] },
-    { id: 'text-04', category: 'Comunicação Têxtil', name: 'Camiseta personalizada (lote extra 1)', description: '', requiredQuantity: 20, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'checkroom', photos: [], checklist: [] },
-    { id: 'text-05', category: 'Comunicação Têxtil', name: 'Camiseta personalizada (lote extra 2)', description: '', requiredQuantity: 7, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'checkroom', photos: [], checklist: [] },
+    { id: 'text-01', category: 'Comunicação Têxtil', name: 'Agasalho em moletom', description: '', requiredQuantity: 50, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHECKROOM, photos: [], checklist: [] },
+    { id: 'text-02', category: 'Comunicação Têxtil', name: 'Calça em moletom', description: '', requiredQuantity: 50, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHECKROOM, photos: [], checklist: [] },
+    { id: 'text-03', category: 'Comunicação Têxtil', name: 'Camisa polo', description: '', requiredQuantity: 50, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHECKROOM, photos: [], checklist: [] },
+    { id: 'text-04', category: 'Comunicação Têxtil', name: 'Camiseta personalizada (lote extra 1)', description: '', requiredQuantity: 20, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHECKROOM, photos: [], checklist: [] },
+    { id: 'text-05', category: 'Comunicação Têxtil', name: 'Camiseta personalizada (lote extra 2)', description: '', requiredQuantity: 7, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CHECKROOM, photos: [], checklist: [] },
 
     // Comunicação Digital (Page 4)
-    { id: 'dig-01', category: 'Comunicação Digital', name: 'Aplicativo do evento', description: '2 meses', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'install_mobile', photos: [], checklist: [] },
-    { id: 'dig-02', category: 'Comunicação Digital', name: 'Conteúdo digital mapping', description: 'Produção para indoor', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'animation', photos: [], checklist: [] },
-    { id: 'dig-03', category: 'Comunicação Digital', name: 'Motion gráfico', description: 'Para arena e túneis', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'movie_filter', photos: [], checklist: [] },
-    { id: 'dig-04', category: 'Comunicação Digital', name: 'Controle de acesso digital', description: 'Sistema', requiredQuantity: 32, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'qr_code_scanner', photos: [], checklist: [] },
-    { id: 'dig-05', category: 'Comunicação Digital', name: 'Programação do jogo Plinko', description: 'Digital', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'code', photos: [], checklist: [] },
+    { id: 'dig-01', category: 'Comunicação Digital', name: 'Aplicativo do evento', description: '2 meses', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.INSTALL_MOBILE, photos: [], checklist: [] },
+    { id: 'dig-02', category: 'Comunicação Digital', name: 'Conteúdo digital mapping', description: 'Produção para indoor', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.ANIMATION, photos: [], checklist: [] },
+    { id: 'dig-03', category: 'Comunicação Digital', name: 'Motion gráfico', description: 'Para arena e túneis', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.MOVIE_FILTER, photos: [], checklist: [] },
+    { id: 'dig-04', category: 'Comunicação Digital', name: 'Controle de acesso digital', description: 'Sistema', requiredQuantity: 32, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.QR_SCANNER, photos: [], checklist: [] },
+    { id: 'dig-05', category: 'Comunicação Digital', name: 'Programação do jogo Plinko', description: 'Digital', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CODE, photos: [], checklist: [] },
 
     // Foto e Filmagem (Page 5)
-    { id: 'foto-01', category: 'Foto e Filmagem', name: 'Fotografia com tratamento', description: 'Serviço com recorte', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'photo_camera', photos: [], checklist: [] },
+    { id: 'foto-01', category: 'Foto e Filmagem', name: 'Fotografia com tratamento', description: 'Serviço com recorte', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.UI.PHOTO_CAMERA, photos: [], checklist: [] },
 
     // Serviços Técnicos (Page 5)
-    { id: 'tec-01', category: 'Serviços Técnicos', name: 'Social Media', description: 'Para produção de conteúdo', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'share', photos: [], checklist: [] },
-    { id: 'tec-02', category: 'Serviços Técnicos', name: 'Web Designer', description: 'Para materiais do app', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'web', photos: [], checklist: [] },
-    { id: 'tec-03', category: 'Serviços Técnicos', name: 'Concierge', description: 'Para confirmação de participantes', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'support_agent', photos: [], checklist: [] },
-    { id: 'tec-04', category: 'Serviços Técnicos', name: 'Despachante', description: 'Para trâmites legais e alvarás', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'gavel', photos: [], checklist: [] },
-    { id: 'tec-05', category: 'Serviços Técnicos', name: 'Eletricista', description: '', requiredQuantity: 1, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: 'electrical_services', photos: [], checklist: [] },
-    { id: 'tec-06', category: 'Serviços Técnicos', name: 'Equipe cabelo e maquiagem', description: '', requiredQuantity: 2, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'face', photos: [], checklist: [] },
-    { id: 'tec-07', category: 'Serviços Técnicos', name: 'Direção de palco', description: 'Coordenação', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'director_chair', photos: [], checklist: [] },
+    { id: 'tec-01', category: 'Serviços Técnicos', name: 'Social Media', description: 'Para produção de conteúdo', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SHARE, photos: [], checklist: [] },
+    { id: 'tec-02', category: 'Serviços Técnicos', name: 'Web Designer', description: 'Para materiais do app', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.WEB, photos: [], checklist: [] },
+    { id: 'tec-03', category: 'Serviços Técnicos', name: 'Concierge', description: 'Para confirmação de participantes', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SUPPORT_AGENT, photos: [], checklist: [] },
+    { id: 'tec-04', category: 'Serviços Técnicos', name: 'Despachante', description: 'Para trâmites legais e alvarás', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.GAVEL, photos: [], checklist: [] },
+    { id: 'tec-05', category: 'Serviços Técnicos', name: 'Eletricista', description: '', requiredQuantity: 1, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.ELECTRICAL, photos: [], checklist: [] },
+    { id: 'tec-06', category: 'Serviços Técnicos', name: 'Equipe cabelo e maquiagem', description: '', requiredQuantity: 2, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.FACE, photos: [], checklist: [] },
+    { id: 'tec-07', category: 'Serviços Técnicos', name: 'Direção de palco', description: 'Coordenação', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.DIRECTOR_CHAIR, photos: [], checklist: [] },
 
     // Recursos Humanos (Page 5)
-    { id: 'rh-01', category: 'Recursos Humanos', name: 'Equipe técnica de palco', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'engineering', photos: [], checklist: [] },
-    { id: 'rh-02', category: 'Recursos Humanos', name: 'Promotores de entrada', description: '', requiredQuantity: 57, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'groups', photos: [], checklist: [] },
-    { id: 'rh-03', category: 'Recursos Humanos', name: 'Limpeza', description: '', requiredQuantity: 4, dailyRate: 4, currentQuantity: 0, status: 'Pendente', icon: 'cleaning_services', photos: [], checklist: [] },
-    { id: 'rh-04', category: 'Recursos Humanos', name: 'Segurança diurno', description: '', requiredQuantity: 22, dailyRate: 4, currentQuantity: 0, status: 'Pendente', icon: 'security', photos: [], checklist: [] },
-    { id: 'rh-05', category: 'Recursos Humanos', name: 'Segurança noturno', description: '', requiredQuantity: 12, dailyRate: 4, currentQuantity: 0, status: 'Pendente', icon: 'security', photos: [], checklist: [] },
-    { id: 'rh-06', category: 'Recursos Humanos', name: 'Coordenador foyer', description: '', requiredQuantity: 1, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: 'person', photos: [], checklist: [] },
-    { id: 'rh-07', category: 'Recursos Humanos', name: 'Coordenador plenária', description: '', requiredQuantity: 1, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: 'person', photos: [], checklist: [] },
-    { id: 'rh-08', category: 'Recursos Humanos', name: 'Coordenador restaurante', description: '', requiredQuantity: 1, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: 'person', photos: [], checklist: [] },
-    { id: 'rh-09', category: 'Recursos Humanos', name: 'Coordenador coquetel', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'person', photos: [], checklist: [] },
-    { id: 'rh-10', category: 'Recursos Humanos', name: 'Brigadistas', description: '', requiredQuantity: 6, dailyRate: 5, currentQuantity: 0, status: 'Pendente', icon: 'medical_services', photos: [], checklist: [] },
-    { id: 'rh-11', category: 'Recursos Humanos', name: 'Carregadores', description: '', requiredQuantity: 10, dailyRate: 5, currentQuantity: 0, status: 'Pendente', icon: 'trolley', photos: [], checklist: [] },
-    { id: 'rh-12', category: 'Recursos Humanos', name: 'Montagem welcome kit - matriz', description: '', requiredQuantity: 6, dailyRate: 5, currentQuantity: 0, status: 'Pendente', icon: 'inventory', photos: [], checklist: [] },
-    { id: 'rh-13', category: 'Recursos Humanos', name: 'Montagem welcome kit - hotel', description: '', requiredQuantity: 3, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: 'inventory', photos: [], checklist: [] },
+    { id: 'rh-01', category: 'Recursos Humanos', name: 'Equipe técnica de palco', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.ENGINEERING, photos: [], checklist: [] },
+    { id: 'rh-02', category: 'Recursos Humanos', name: 'Promotores de entrada', description: '', requiredQuantity: 57, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.CATEGORIES.RH, photos: [], checklist: [] },
+    { id: 'rh-03', category: 'Recursos Humanos', name: 'Limpeza', description: '', requiredQuantity: 4, dailyRate: 4, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.CLEANING, photos: [], checklist: [] },
+    { id: 'rh-04', category: 'Recursos Humanos', name: 'Segurança diurno', description: '', requiredQuantity: 22, dailyRate: 4, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SECURITY, photos: [], checklist: [] },
+    { id: 'rh-05', category: 'Recursos Humanos', name: 'Segurança noturno', description: '', requiredQuantity: 12, dailyRate: 4, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.SECURITY, photos: [], checklist: [] },
+    { id: 'rh-06', category: 'Recursos Humanos', name: 'Coordenador foyer', description: '', requiredQuantity: 1, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: ICONS.UI.USER, photos: [], checklist: [] },
+    { id: 'rh-07', category: 'Recursos Humanos', name: 'Coordenador plenária', description: '', requiredQuantity: 1, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: ICONS.UI.USER, photos: [], checklist: [] },
+    { id: 'rh-08', category: 'Recursos Humanos', name: 'Coordenador restaurante', description: '', requiredQuantity: 1, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: ICONS.UI.USER, photos: [], checklist: [] },
+    { id: 'rh-09', category: 'Recursos Humanos', name: 'Coordenador coquetel', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.UI.USER, photos: [], checklist: [] },
+    { id: 'rh-10', category: 'Recursos Humanos', name: 'Brigadistas', description: '', requiredQuantity: 6, dailyRate: 5, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.MEDICAL, photos: [], checklist: [] },
+    { id: 'rh-11', category: 'Recursos Humanos', name: 'Carregadores', description: '', requiredQuantity: 10, dailyRate: 5, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.TROLLEY, photos: [], checklist: [] },
+    { id: 'rh-12', category: 'Recursos Humanos', name: 'Montagem welcome kit - matriz', description: '', requiredQuantity: 6, dailyRate: 5, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.INVENTORY, photos: [], checklist: [] },
+    { id: 'rh-13', category: 'Recursos Humanos', name: 'Montagem welcome kit - hotel', description: '', requiredQuantity: 3, dailyRate: 3, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.INVENTORY, photos: [], checklist: [] },
 
     // Serviços Artísticos (Page 6)
-    { id: 'art-01', category: 'Serviços Artísticos', name: 'Mestre de cerimônia', description: 'Paulo Vieira', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'mic_external_on', photos: [], checklist: [] },
-    { id: 'art-02', category: 'Serviços Artísticos', name: 'Palestrante - Brett King', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'record_voice_over', photos: [], checklist: [] },
-    { id: 'art-03', category: 'Serviços Artísticos', name: 'Palestrante - Maha Mamo', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'record_voice_over', photos: [], checklist: [] },
-    { id: 'art-04', category: 'Serviços Artísticos', name: 'Artista - Fafá de Belém', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'music_note', photos: [], checklist: [] },
-    { id: 'art-05', category: 'Serviços Artísticos', name: 'Artista - Maikon Pinheiro', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'music_note', photos: [], checklist: [] },
+    { id: 'art-01', category: 'Serviços Artísticos', name: 'Mestre de cerimônia', description: 'Paulo Vieira', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.MIC_EXTERNAL, photos: [], checklist: [] },
+    { id: 'art-02', category: 'Serviços Artísticos', name: 'Palestrante - Brett King', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.VOICE_OVER, photos: [], checklist: [] },
+    { id: 'art-03', category: 'Serviços Artísticos', name: 'Palestrante - Maha Mamo', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.VOICE_OVER, photos: [], checklist: [] },
+    { id: 'art-04', category: 'Serviços Artísticos', name: 'Artista - Fafá de Belém', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.MUSIC_NOTE, photos: [], checklist: [] },
+    { id: 'art-05', category: 'Serviços Artísticos', name: 'Artista - Maikon Pinheiro', description: '', requiredQuantity: 1, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.MUSIC_NOTE, photos: [], checklist: [] },
 
     // A&B (Page 6)
-    { id: 'ab-01', category: 'A&B', name: 'Café personalizado - almoço', description: '', requiredQuantity: 1000, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'coffee', photos: [], checklist: [] },
-    { id: 'ab-02', category: 'A&B', name: 'Café personalizado - coquetel', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: 'local_bar', photos: [], checklist: [] },
+    { id: 'ab-01', category: 'A&B', name: 'Café personalizado - almoço', description: '', requiredQuantity: 1000, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.COFFEE, photos: [], checklist: [] },
+    { id: 'ab-02', category: 'A&B', name: 'Café personalizado - coquetel', description: '', requiredQuantity: 1000, dailyRate: 1, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.BAR, photos: [], checklist: [] },
 
     // Outros (Page 6)
-    { id: 'out-01', category: 'Outros', name: 'Ambulância UTI', description: 'Com médico', requiredQuantity: 1, dailyRate: 5, currentQuantity: 0, status: 'Pendente', icon: 'ambulance', photos: [], checklist: [] },
-    { id: 'out-02', category: 'Outros', name: 'Posto médico', description: '', requiredQuantity: 1, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: 'local_hospital', photos: [], checklist: [] }
+    { id: 'out-01', category: 'Outros', name: 'Ambulância UTI', description: 'Com médico', requiredQuantity: 1, dailyRate: 5, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.AMBULANCE, photos: [], checklist: [] },
+    { id: 'out-02', category: 'Outros', name: 'Posto médico', description: '', requiredQuantity: 1, dailyRate: 2, currentQuantity: 0, status: 'Pendente', icon: ICONS.ITEMS.HOSPITAL, photos: [], checklist: [] }
 ];
 
 const INITIAL_EMPTY_ITEMS: Item[] = []; 
@@ -230,7 +231,7 @@ const Login = ({ onLogin }: { onLogin: () => void }) => {
             <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Usuário</label>
                 <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-3.5 text-slate-400 text-[20px]">person</span>
+                <span className="material-symbols-outlined absolute left-4 top-3.5 text-slate-400 text-[20px]">{ICONS.UI.USER}</span>
                 <input 
                     type="email" 
                     placeholder="usuario@valiant.com" 
@@ -243,7 +244,7 @@ const Login = ({ onLogin }: { onLogin: () => void }) => {
             <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Senha</label>
                 <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-3.5 text-slate-400 text-[20px]">lock</span>
+                <span className="material-symbols-outlined absolute left-4 top-3.5 text-slate-400 text-[20px]">{ICONS.UI.LOCK}</span>
                 <input 
                     type="password" 
                     placeholder="••••••••" 
@@ -284,7 +285,7 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
         location: 'CICB - Brasília, DF', 
         status: 'Em Execução', 
         progress: 15, 
-        icon: 'campaign',
+        icon: ICONS.ITEMS.CAMPAIGN,
         image: 'https://i.imgur.com/Kz8qf6x.png' 
     },
     { 
@@ -295,7 +296,7 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
         location: 'São Paulo', 
         status: 'Concluído', 
         progress: 100, 
-        icon: 'theater_comedy', 
+        icon: ICONS.CATEGORIES.CENOGRAFIA, 
         image: '' 
     },
     { 
@@ -306,7 +307,7 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
         location: 'Nacional', 
         status: 'Concluído', 
         progress: 100, 
-        icon: 'casino', 
+        icon: ICONS.ITEMS.CASINO, 
         image: '' 
     },
     { 
@@ -317,7 +318,7 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
         location: 'Rio de Janeiro', 
         status: 'Concluído', 
         progress: 100, 
-        icon: 'confirmation_number', 
+        icon: ICONS.ITEMS.TICKET, 
         image: '' 
     },
     { 
@@ -328,7 +329,7 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
         location: 'São Paulo', 
         status: 'Concluído', 
         progress: 100, 
-        icon: 'inventory_2', 
+        icon: ICONS.ITEMS.INVENTORY_2, 
         image: '' 
     }
   ];
@@ -347,14 +348,14 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
         <h2 className="text-2xl font-bold text-slate-900">Lista de Eventos</h2>
         <div className="flex items-center gap-3">
             <button className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-50 border border-slate-200">
-                <span className="material-symbols-outlined text-slate-600">notifications</span>
+                <span className="material-symbols-outlined text-slate-600">{ICONS.UI.NOTIFICATIONS}</span>
             </button>
             <div className="relative">
                 <button 
                     onClick={() => setShowMenu(!showMenu)}
                     className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
                 >
-                    <span className="material-symbols-outlined text-slate-800">more_vert</span>
+                    <span className="material-symbols-outlined text-slate-800">{ICONS.UI.MENU_MORE}</span>
                 </button>
                 
                 {/* Dropdown Menu */}
@@ -364,20 +365,20 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
                         <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                             <button className="w-full text-left px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3">
                                 {/* Fixed icon class to outlined */}
-                                <span className="material-symbols-outlined text-[20px] text-slate-400">event_note</span> Eventos
+                                <span className="material-symbols-outlined text-[20px] text-slate-400">{ICONS.UI.EVENT_NOTE}</span> Eventos
                             </button>
                             <button className="w-full text-left px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3">
-                                <span className="material-symbols-outlined text-[20px] text-slate-400">photo_camera</span> Fotos
+                                <span className="material-symbols-outlined text-[20px] text-slate-400">{ICONS.UI.PHOTO_CAMERA}</span> Fotos
                             </button>
                             <button className="w-full text-left px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3">
-                                <span className="material-symbols-outlined text-[20px] text-slate-400">person</span> Perfil
+                                <span className="material-symbols-outlined text-[20px] text-slate-400">{ICONS.UI.USER}</span> Perfil
                             </button>
                             <div className="h-px bg-slate-100 my-1"></div>
                             <button 
                                 onClick={onLogout}
                                 className="w-full text-left px-5 py-3 text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-3"
                             >
-                                <span className="material-symbols-outlined text-[20px]">logout</span> Sair
+                                <span className="material-symbols-outlined text-[20px]">{ICONS.UI.LOGOUT}</span> Sair
                             </button>
                         </div>
                     </>
@@ -388,7 +389,7 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
       
       <div className="px-6 mt-6">
         <div className="flex items-center rounded-xl bg-white border border-slate-200 shadow-sm px-4 py-3.5">
-          <span className="material-symbols-outlined text-slate-400 mr-3">search</span>
+          <span className="material-symbols-outlined text-slate-400 mr-3">{ICONS.UI.SEARCH}</span>
           <input className="bg-transparent border-none w-full text-slate-900 placeholder-slate-400 focus:ring-0 p-0 text-sm" placeholder="Buscar por nome ou data..." />
         </div>
       </div>
@@ -406,7 +407,7 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
                   <option value="Concluídos">Concluídos</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-600">
-                  <span className="material-symbols-outlined text-[20px]">expand_more</span>
+                  <span className="material-symbols-outlined text-[20px]">{ICONS.UI.EXPAND_MORE}</span>
               </div>
           </div>
       </div>
@@ -439,10 +440,10 @@ const EventList = ({ onSelectEvent, onLogout }: { onSelectEvent: (e: Event) => v
 
                     <div className="flex gap-3">
                         <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 rounded-md text-xs font-medium text-slate-600 border border-slate-100">
-                            <span className="material-symbols-outlined text-[14px]">calendar_today</span> {evt.date}
+                            <span className="material-symbols-outlined text-[14px]">{ICONS.UI.CALENDAR}</span> {evt.date}
                         </div>
                         <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 rounded-md text-xs font-medium text-slate-600 border border-slate-100">
-                            <span className="material-symbols-outlined text-[14px]">location_on</span> {evt.location}
+                            <span className="material-symbols-outlined text-[14px]">{ICONS.UI.LOCATION}</span> {evt.location}
                         </div>
                     </div>
                     
@@ -568,7 +569,7 @@ const EventDetail = ({ event, items, onBack, onSelectItem, onUpdateEvent, onUpda
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-6">
             <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full animate-[bounce-in_0.5s]">
                 <div className="h-20 w-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span className="material-symbols-outlined text-5xl text-amber-400">emoji_events</span>
+                    <span className="material-symbols-outlined text-5xl text-amber-400">{ICONS.UI.EMOJI_EVENTS}</span>
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-3">Parabéns!</h3>
                 <p className="text-slate-600 mb-8 leading-relaxed">Todos os itens foram incluídos. Agora é só montar o Relatório de Execução com todo o material.</p>
@@ -617,12 +618,12 @@ const EventDetail = ({ event, items, onBack, onSelectItem, onUpdateEvent, onUpda
           {/* Header Action Buttons (Simplified) */}
           <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-20">
             <button onClick={onBack} className="p-2 transition-opacity hover:opacity-80">
-                <span className="material-symbols-outlined text-white text-[28px]">arrow_back</span>
+                <span className="material-symbols-outlined text-white text-[28px]">{ICONS.UI.ARROW_BACK}</span>
             </button>
             
             <div className="relative">
                 <button onClick={() => setShowMenu(!showMenu)} className="p-2 transition-opacity hover:opacity-80">
-                    <span className="material-symbols-outlined text-white text-[28px]">more_vert</span>
+                    <span className="material-symbols-outlined text-white text-[28px]">{ICONS.UI.MENU_MORE}</span>
                 </button>
                 
                 {/* Dropdown Menu */}
@@ -634,19 +635,19 @@ const EventDetail = ({ event, items, onBack, onSelectItem, onUpdateEvent, onUpda
                                 onClick={() => { setShowEditModal(true); setShowMenu(false); }}
                                 className="w-full text-left px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3"
                              >
-                                <span className="material-symbols-outlined text-[20px] text-slate-400">edit_note</span> Editar Evento
+                                <span className="material-symbols-outlined text-[20px] text-slate-400">{ICONS.UI.EDIT_NOTE}</span> Editar Evento
                             </button>
                              <button 
                                 onClick={() => headerInputRef.current?.click()}
                                 className="w-full text-left px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3"
                              >
-                                <span className="material-symbols-outlined text-[20px] text-slate-400">image</span> Editar Capa
+                                <span className="material-symbols-outlined text-[20px] text-slate-400">{ICONS.UI.IMAGE}</span> Editar Capa
                             </button>
                             <button 
                                 onClick={() => baseInputRef.current?.click()}
                                 className="w-full text-left px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3"
                              >
-                                <span className="material-symbols-outlined text-[20px] text-slate-400">upload_file</span> Carregar Base
+                                <span className="material-symbols-outlined text-[20px] text-slate-400">{ICONS.UI.UPLOAD_FILE}</span> Carregar Base
                             </button>
                         </div>
                     </>
@@ -685,7 +686,7 @@ const EventDetail = ({ event, items, onBack, onSelectItem, onUpdateEvent, onUpda
         <div className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex justify-between mb-6">
             <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-500">
-                    <span className="material-symbols-outlined">calendar_month</span>
+                    <span className="material-symbols-outlined">{ICONS.UI.CALENDAR_MONTH}</span>
                 </div>
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase">Data</p>
@@ -695,7 +696,7 @@ const EventDetail = ({ event, items, onBack, onSelectItem, onUpdateEvent, onUpda
             <div className="w-px h-10 bg-slate-100"></div>
             <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-500">
-                    <span className="material-symbols-outlined">location_on</span>
+                    <span className="material-symbols-outlined">{ICONS.UI.LOCATION}</span>
                 </div>
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase">Local</p>
@@ -733,7 +734,7 @@ const EventDetail = ({ event, items, onBack, onSelectItem, onUpdateEvent, onUpda
         {items.length === 0 ? (
             <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300">
                  <div className="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="material-symbols-outlined text-slate-400">upload_file</span>
+                    <span className="material-symbols-outlined text-slate-400">{ICONS.UI.UPLOAD_FILE}</span>
                  </div>
                 <p className="text-sm text-slate-500 font-medium">Nenhum item carregado.</p>
                 <p className="text-xs text-slate-400 mt-1">Carregue a base no menu acima.</p>
@@ -765,7 +766,7 @@ const EventDetail = ({ event, items, onBack, onSelectItem, onUpdateEvent, onUpda
                                         {catCompleted}/{catTotal}
                                     </span>
                                     <span className={`material-symbols-outlined text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-                                        keyboard_arrow_down
+                                        {ICONS.UI.KEYBOARD_ARROW_DOWN}
                                     </span>
                                 </div>
                             </button>
@@ -792,7 +793,7 @@ const EventDetail = ({ event, items, onBack, onSelectItem, onUpdateEvent, onUpda
                                                     </div>
                                                 </div>
 
-                                                <span className="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
+                                                <span className="material-symbols-outlined text-slate-300 text-[18px]">{ICONS.UI.CHEVRON_RIGHT}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -927,7 +928,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                         onClick={() => setViewingPhotoIndex(null)}
                         className="absolute top-6 right-6 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors z-50"
                     >
-                        <span className="material-symbols-outlined text-white text-[24px]">close</span>
+                        <span className="material-symbols-outlined text-white text-[24px]">{ICONS.UI.CLOSE}</span>
                     </button>
 
                     <div className="w-full flex-1 flex items-center justify-between px-2 relative">
@@ -937,7 +938,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                                 disabled={viewingPhotoIndex === 0}
                                 className={`p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all ${viewingPhotoIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'} z-20`}
                              >
-                                <span className="material-symbols-outlined text-white text-[32px]">chevron_left</span>
+                                <span className="material-symbols-outlined text-white text-[32px]">{ICONS.UI.CHEVRON_LEFT}</span>
                              </button>
                          )}
 
@@ -956,13 +957,13 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium opacity-90">
                                         {viewingPhoto.coords && (
                                             <span className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[14px]">location_on</span>
+                                                <span className="material-symbols-outlined text-[14px]">{ICONS.UI.LOCATION}</span>
                                                 {viewingPhoto.coords}
                                             </span>
                                         )}
                                         {viewingPhoto.timestamp && (
                                             <span className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                                                <span className="material-symbols-outlined text-[14px]">{ICONS.UI.CALENDAR}</span>
                                                 {viewingPhoto.timestamp}
                                             </span>
                                         )}
@@ -977,7 +978,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                                 disabled={viewingPhotoIndex === item.photos.length - 1}
                                 className={`p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all ${viewingPhotoIndex === item.photos.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'} z-20`}
                              >
-                                <span className="material-symbols-outlined text-white text-[32px]">chevron_right</span>
+                                <span className="material-symbols-outlined text-white text-[32px]">{ICONS.UI.CHEVRON_RIGHT}</span>
                              </button>
                          )}
                     </div>
@@ -995,7 +996,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
             <header className="bg-white border-b border-slate-200 sticky top-0 z-20 px-4 py-4 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
                     <button onClick={onBack} className="p-2 hover:bg-slate-50 rounded-full">
-                        <span className="material-symbols-outlined text-slate-700">arrow_back_ios_new</span>
+                        <span className="material-symbols-outlined text-slate-700">{ICONS.UI.ARROW_BACK_IOS}</span>
                     </button>
                     <div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">ITEM #{item.id}</p>
@@ -1003,7 +1004,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                     </div>
                 </div>
                 <button className="p-2 hover:bg-slate-50 rounded-full">
-                    <span className="material-symbols-outlined text-slate-700">more_vert</span>
+                    <span className="material-symbols-outlined text-slate-700">{ICONS.UI.MENU_MORE}</span>
                 </button>
             </header>
 
@@ -1034,7 +1035,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                     <div className="bg-white rounded-2xl p-5 shadow-card border border-red-100 mb-5">
                         <div className="flex items-start gap-3 mb-3">
                              <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-                                 <span className="material-symbols-outlined text-red-500">warning</span>
+                                 <span className="material-symbols-outlined text-red-500">{ICONS.UI.WARNING}</span>
                              </div>
                              <div>
                                  <h4 className="text-sm font-bold text-slate-900">Discrepância Detectada pela IA</h4>
@@ -1066,7 +1067,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                         {/* Spinner removed since AI is disabled */}
                         <>
                             <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-slate-100 transition-colors">
-                                <span className="material-symbols-outlined text-slate-800 text-[20px]">add_a_photo</span>
+                                <span className="material-symbols-outlined text-slate-800 text-[20px]">{ICONS.UI.ADD_PHOTO}</span>
                             </div>
                             <span className="text-[10px] font-bold text-slate-400">Nova Foto</span>
                         </>
@@ -1093,7 +1094,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                             {/* Status Indicators on Photo */}
                             {photo.isVerified && !photo.hasWarning && (
                                 <div className="absolute top-2 right-2 h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center border border-white">
-                                    <span className="material-symbols-outlined text-white text-[12px]">check</span>
+                                    <span className="material-symbols-outlined text-white text-[12px]">{ICONS.UI.CHECK}</span>
                                 </div>
                             )}
                             {photo.hasWarning && (
@@ -1115,7 +1116,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                 />
 
                 <button className="w-full py-3 mb-6 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">collections</span>
+                    <span className="material-symbols-outlined text-[16px]">{ICONS.UI.COLLECTIONS}</span>
                     Adicionar da Galeria
                 </button>
 
@@ -1126,7 +1127,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                     <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-50">
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600">
-                                <span className="material-symbols-outlined text-[20px]">calendar_today</span>
+                                <span className="material-symbols-outlined text-[20px]">{ICONS.UI.CALENDAR}</span>
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-slate-900">Carimbo de Data/Hora</p>
@@ -1145,7 +1146,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600">
-                                    <span className="material-symbols-outlined text-[20px]">pin_drop</span>
+                                    <span className="material-symbols-outlined text-[20px]">{ICONS.UI.PIN_DROP}</span>
                                 </div>
                                 <div>
                                     <p className="text-sm font-bold text-slate-900">Geolocalização</p>
@@ -1163,7 +1164,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                             <div className="mt-4 pl-13 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Local da Captura</label>
                                 <div className="relative">
-                                     <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">edit_location</span>
+                                     <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">{ICONS.UI.EDIT_LOCATION}</span>
                                      <input 
                                         type="text" 
                                         value={customLocation}
@@ -1186,7 +1187,7 @@ const ItemDetail = ({ item, event, onBack, onUpdateItem }: { item: Item, event: 
                     disabled={item.photos.length === 0}
                     className="w-full bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-900/10 hover:bg-slate-900 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
                 >
-                    <span className="material-symbols-outlined text-[20px]">check</span>
+                    <span className="material-symbols-outlined text-[20px]">{ICONS.UI.CHECK}</span>
                     Salvar e Continuar
                 </button>
             </div>
